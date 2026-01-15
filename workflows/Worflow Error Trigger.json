@@ -1,0 +1,235 @@
+{
+  "name": "Worflow Error Trigger",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e65eeef5-bdb1-4e39-989d-8142d69327fa",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"timeStamp\": \"{{ $now.toFormat('yyyy-MM-dd HH:mm') }}\",\n  \"worflow_name\": \"{{ $json.workflow.name || ''}}\",\n  \"worflow_id\": \"{{ $json.workflow.id }}\",\n  \"node_name\": \"{{ $json.execution.error?.node?.name || ''}}\",\n  \"error_message\": \"{{ $json.execution.error.message }}\",\n  \"execution_id\": \"{{ $json.execution.id }}\",\n  \"execution_url\": \"{{ $json.execution.url }}\",\n  \"status\": \"ERROR\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a5c114a0-2158-44fb-adc9-ea824d1aabde",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Dz98XdjyJcnDky-XH1V03WOQ6J_oVs-MXHto12bMnC0",
+          "mode": "list",
+          "cachedResultName": "log - worflows errors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dz98XdjyJcnDky-XH1V03WOQ6J_oVs-MXHto12bMnC0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Dz98XdjyJcnDky-XH1V03WOQ6J_oVs-MXHto12bMnC0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "timeStamp": "={{ $json.timeStamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timeStamp",
+              "displayName": "timeStamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "worflow_name",
+              "displayName": "worflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "worflow_id",
+              "displayName": "worflow_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "node_name",
+              "displayName": "node_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_url",
+              "displayName": "execution_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        0
+      ],
+      "id": "257641ff-660d-45e8-9362-26c5ab793299",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zxainRdwmdZ7bBAO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "nicofer179@gmail.com",
+        "subject": "=⚠️ Alerta en workflow {{ $json.worflow_name }}",
+        "message": "=Se detecto un error en n8n\n\nWorkflow: {{ $json.worflow_name }}\n< br />\nNodo: {{ $json.node_name }}\n< br />\nError: {{ $json.error_message }}\n< br />\nExcecution ID: {{ $json.execution_id }}\n< br />\nExecution URL: {{ $json.execution_url }}\n< br />\nFecha: {{ $json.timeStamp }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "fd54cacc-8ec5-432d-a2e1-1c0d56650bad",
+      "name": "Send a message",
+      "webhookId": "a2e13b2f-a40d-45f0-b935-9e423c51e2c9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QYqn3LgiWGP1XQDB",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "76ce7caf-1124-45a3-8b9d-e3b46ec4be67",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30877a0314d84e0a9dc23aadf403ae393c06ecb127f2edc09c97ef3cb817d5e1"
+  },
+  "id": "IFGrU-wPfXptcbuPVJePs",
+  "tags": [
+    {
+      "updatedAt": "2026-01-15T04:20:23.515Z",
+      "createdAt": "2026-01-15T04:20:23.515Z",
+      "id": "SYa5RBupznMHGOM5",
+      "name": "CODERHOUSE"
+    }
+  ]
+}

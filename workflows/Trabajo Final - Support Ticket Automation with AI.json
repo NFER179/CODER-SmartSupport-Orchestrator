@@ -1,0 +1,1074 @@
+{
+  "name": "Trabajo Final - Support Ticket Automation with AI",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1J8vYPxpkhRgb7saxUwM8a2RuSJ5QkUKwoqibxh71pAs",
+          "mode": "list",
+          "cachedResultName": "Support_Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1J8vYPxpkhRgb7saxUwM8a2RuSJ5QkUKwoqibxh71pAs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1J8vYPxpkhRgb7saxUwM8a2RuSJ5QkUKwoqibxh71pAs/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -480
+      ],
+      "id": "bdda3ecb-5489-4f2d-877a-01d9b63cee88",
+      "name": "Trigger – New Support Ticket",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "MFzYUl12J7eECUz2",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Sos un sistema automático de clasificación de tickets de soporte.\n\nAnalizá el texto del ticket y determiná si requiere atención inmediata.\n\nSi el mensaje implica impacto operativo, legal o financiero inmediato, consideralo CRITICO.\n\nRespondé exclusivamente con un objeto JSON válido.\nNo utilices bloques de código, Markdown, backticks, texto adicional\nni escapes de caracteres (por ejemplo \\\").\nEl JSON debe ser estrictamente válido y en una sola línea.\nNo agregues saltos de línea.\n\nFormato obligatorio de salida (exacto):\n{\n  \"ticket_id\": \"{{ $json.Ticket_id }}\",\n  \"cliente\": \"{{ $json.cliente }}\",\n  \"mensaje\": \"{{ $json.mensaje }}\",\n  \"priority\":\"CRITICO\"\n}\no\n{\n  \"ticket_id\": \"{{ $json.Ticket_id }}\",\n  \"cliente\": \"{{ $json.cliente }}\",\n  \"mensaje\": \"{{ $json.mensaje }}\",\n  \"priority\":\"NO_CRITICO\"\n}\n\nTexto del ticket:\n{{ $json.mensaje }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        -480
+      ],
+      "id": "f41474b5-b80a-4bfd-8f06-ec413f0efa0d",
+      "name": "LLM – Classify Ticket Priority",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "cArGQkDUcXTuf0KZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const text = item.json.content.parts[0].text;\n\n  const parsed = JSON.parse(text);\n\n  return {\n    json: {\n      ticket_id: parsed.ticket_id,\n      cliente: parsed.cliente ?? null,\n      mensaje: parsed.mensaje,\n      priority: parsed.priority\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -480
+      ],
+      "id": "48c49c17-3cf0-420f-8f11-3bcf6591c79b",
+      "name": "Parser – Normalize LLM Classification Output"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "712c67c5-3426-41de-8502-e3ab930a1642",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "CRITICO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -480
+      ],
+      "id": "b68990be-9209-45b3-845c-a18816901ac8",
+      "name": "Router – Critical vs Non-Critical"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": ".md",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1sAQ04mopV1rptw4UMkircYDfdM32EtXU",
+            "mode": "list",
+            "cachedResultName": "Support_Knowledge_Base",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1sAQ04mopV1rptw4UMkircYDfdM32EtXU"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1024,
+        -480
+      ],
+      "id": "42843e5a-39f9-4df9-a51e-f571f723bccb",
+      "name": "KB – Search Knowledge Base Files",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rhItuEdwAzR0y2GC",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n/*\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();\n*/\n\nconst seen = new Set();\n\nreturn items.filter(item => {\n  if (seen.has(item.json.id)) {\n    return false;\n  }\n  seen.add(item.json.id);\n  return true;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -480
+      ],
+      "id": "405452e0-8c7f-4a71-bc32-1ab185981598",
+      "name": "Filter – Remove Duplicate KB Files"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1472,
+        -480
+      ],
+      "id": "cf8b4dd1-c719-4acb-9430-c59470e8d876",
+      "name": "KB – Download Knowledge File",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rhItuEdwAzR0y2GC",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {
+          "encoding": "utf8"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        -480
+      ],
+      "id": "dfee4e20-42c3-409a-aac1-8d583ebbfa93",
+      "name": "KB – Extract Text Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n/*\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();\n*/\n\nlet text = $input.all().map( item => item.json.data ).join( \"\\n\\n---\\n\\n\" )\n\nreturn [\n  {\n    json: {\n      kb_text: text\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -480
+      ],
+      "id": "47aa1626-c0dc-412f-84bd-4e5a5c0177a6",
+      "name": "KB – Build Unified Knowledge Context"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2144,
+        -544
+      ],
+      "id": "6c1dd9ed-cc1a-4d1c-b8f6-da7fe64827ba",
+      "name": "Merge – Ticket + Knowledge Base"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Sos un asistente de soporte técnico empresarial.\n\nTenés acceso a una base de conocimiento interna.\nUsá EXCLUSIVAMENTE esa información para justificar causas\ny proponer acciones. Si la base no contiene información\nrelevante, indicálo explícitamente.\n\nBase de conocimiento:\n{{ $json.kb_text }}\n\nTicket ID: {{ $json.ticket_id }}\nCliente: {{ $json.cliente }}\n\nMensaje del ticket:\n{{ $json.mensaje }}\n\nRespondé exclusivamente con un objeto JSON válido.\nNo utilices bloques de código, Markdown, backticks, texto adicional\nni escapes de caracteres (por ejemplo \\\").\nEl JSON debe ser estrictamente válido y en una sola línea.\nNo agregues saltos de línea.\n\nFormato de salida obligatorio:\n{\n  \"ticket_id\": \"{{ $json.ticket_id }}\",\n  \"cliente\": \"{{ $json.cliente }}\",\n  \"summary\": \"Resumen ejecutivo breve\",\n  \"reasons\": [\n    \"Motivo 1\",\n    \"Motivo 2\"\n  ],\n  \"suggested_actions\": [\n    \"Acción sugerida 1\",\n    \"Acción sugerida 2\"\n  ]\n}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        -544
+      ],
+      "id": "4403d7e2-708a-4b00-936f-8bfa75762cc1",
+      "name": "LLM – Generate Critical Ticket Analysis",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "cArGQkDUcXTuf0KZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const text = item.json.content.parts[0].text;\n\n  const parsed = JSON.parse(text);\n\n  return {\n    json: {\n      ticket_id: parsed.ticket_id,\n      cliente: parsed.cliente ?? null,\n      summary: parsed.summary,\n      reasons: parsed.reasons,\n      suggested_actions: parsed.suggested_actions\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -544
+      ],
+      "id": "25d1ca11-262d-444f-9f06-52248bd52797",
+      "name": "Parser – Normalize LLM Resolution Output"
+    },
+    {
+      "parameters": {
+        "sendTo": "nicofer179@gmail.com",
+        "subject": "=🚨 Ticket crítico {{ $json.ticket_id }}",
+        "message": "=<b>Ticket:</b> {{ $json.ticket_id }}<br>\n<b>Cliente:</b> {{ $json.cliente }}<br><br>\n\n<b>Resumen:</b><br>\n{{ $json.summary }}<br><br>\n\n<b>Motivos:</b>\n<ul>\n  <li>{{ $json.reasons.join('</li><li>') }}</li>\n</ul>\n\n<b>Acciones sugeridas:</b>\n<ul>\n  <li>{{ $json.suggested_actions.join('</li><li>') }}</li>\n</ul>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2944,
+        -544
+      ],
+      "id": "61325dc5-de14-4564-84f2-0078782181b7",
+      "name": "Notify – Send Critical Ticket Email",
+      "webhookId": "ce5822da-0ee8-49e1-88af-0725ad55395f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QYqn3LgiWGP1XQDB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "54d87d12-ec7b-4fe7-a2ff-f2698705146c",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "NO_CRITICO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -192
+      ],
+      "id": "6e52faa5-5011-4d74-b74b-26866ea31194",
+      "name": "Router – Non-Critical vs Unknown"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jh8sF2uIAicBCyF_JltjzZO4joFlYOf90BvHWrky2yk",
+          "mode": "list",
+          "cachedResultName": "Support_Backlog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jh8sF2uIAicBCyF_JltjzZO4joFlYOf90BvHWrky2yk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "BACKLOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jh8sF2uIAicBCyF_JltjzZO4joFlYOf90BvHWrky2yk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_id": "={{ $json.ticket_id }}",
+            "cliente": "={{ $json.cliente }}",
+            "mensaje": "={{ $json.mensaje }}",
+            "prioridad": "={{ $json.priority }}",
+            "estado": "ABIERTO",
+            "fecha_ingreso": "= {{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "origen": "n8n",
+            "workflow_version": "v1.0-final-coderhouse"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ticket_id",
+              "displayName": "ticket_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cliente",
+              "displayName": "cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prioridad",
+              "displayName": "prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_ingreso",
+              "displayName": "fecha_ingreso",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "origen",
+              "displayName": "origen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_version",
+              "displayName": "workflow_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -288
+      ],
+      "id": "ec60afe6-17a3-4b6d-b418-d6547c742f28",
+      "name": "Backlog – Register Non-Critical Ticket",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zxainRdwmdZ7bBAO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YLb3ySVitqzcpUymsbS_2e1djLrsPAYWORYaCog6kiI",
+          "mode": "list",
+          "cachedResultName": "Support_Audit_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YLb3ySVitqzcpUymsbS_2e1djLrsPAYWORYaCog6kiI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LLM_EXCEPTIONS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YLb3ySVitqzcpUymsbS_2e1djLrsPAYWORYaCog6kiI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "ticket_id": "={{ $json.ticket_id }}",
+            "cliente": "={{ $json.cliente }}",
+            "mensaje": "={{ $json.mensaje }}",
+            "valor_llm": "={{ $json.priority }}",
+            "valor_normalizado": "DESCONOCIDO",
+            "accion": "REVISAR",
+            "workflow_version": "v1.0-final-coderhouse"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_id",
+              "displayName": "ticket_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cliente",
+              "displayName": "cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valor_llm",
+              "displayName": "valor_llm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valor_normalizado",
+              "displayName": "valor_normalizado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nodo",
+              "displayName": "nodo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_version",
+              "displayName": "workflow_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -96
+      ],
+      "id": "37c723ee-1e38-4a82-813b-a9070df46b39",
+      "name": "Audit Log – Register LLM Exception",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zxainRdwmdZ7bBAO",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Trigger – New Support Ticket": [
+      {
+        "json": {
+          "Ticket_id": "TCK-001",
+          "cliente": "ACME Corp",
+          "mensaje": "Desde hace más de 2 horas el sistema no permite iniciar sesión a ningún usuario. Tenemos operaciones completamente detenidas y necesitamos una solución",
+          "fecha": "2026-01-15 10:05"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "Ticket_id": "TCK-002",
+          "cliente": "Beta Solutions",
+          "mensaje": "Nos gustaría saber si existe alguna documentación actualizada sobre la API para integraciones futuras. No es urgente.",
+          "fecha": "2026-01-15 10:12"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "Ticket_id": "TCK-003",
+          "cliente": "GlobalTech",
+          "mensaje": "Estamos recibiendo errores intermitentes al generar facturas y varios clientes ya reportaron cargos duplicados. Esto puede generar reclamos legales.",
+          "fecha": "2026-01-15 10:18"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "LLM – Classify Ticket Priority": [
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\"ticket_id\": \"TCK-001\", \"cliente\": \"ACME Corp\", \"mensaje\": \"Desde hace más de 2 horas el sistema no permite iniciar sesión a ningún usuario. Tenemos operaciones completamente detenidas y necesitamos una solución\", \"priority\": \"CRITICO\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\"ticket_id\": \"TCK-002\", \"cliente\": \"Beta Solutions\", \"mensaje\": \"Nos gustaría saber si existe alguna documentación actualizada sobre la API para integraciones futuras. No es urgente.\", \"priority\": \"NO_CRITICO\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\"ticket_id\": \"TCK-003\", \"cliente\": \"GlobalTech\", \"mensaje\": \"Estamos recibiendo errores intermitentes al generar facturas y varios clientes ya reportaron cargos duplicados. Esto puede generar reclamos legales.\", \"priority\":\"LEVE\"}"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      }
+    ],
+    "KB – Search Knowledge Base Files": [
+      {
+        "json": {
+          "id": "1YGbq3kp0GXU2qpeNDfRQRTxuYvueeyLk",
+          "name": "billing_errors.md"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "1QGltwaN85TC4VhPxXhk_zVZ_xdrBwESc",
+          "name": "api_documentation_requests.md"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "14JtcbtutQAbmVUPBb4qmAMzpQuwJq9zh",
+          "name": "login_issues.md"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "1YGbq3kp0GXU2qpeNDfRQRTxuYvueeyLk",
+          "name": "billing_errors.md"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "1QGltwaN85TC4VhPxXhk_zVZ_xdrBwESc",
+          "name": "api_documentation_requests.md"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "14JtcbtutQAbmVUPBb4qmAMzpQuwJq9zh",
+          "name": "login_issues.md"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ],
+    "Filter – Remove Duplicate KB Files": [
+      {
+        "json": {
+          "id": "1YGbq3kp0GXU2qpeNDfRQRTxuYvueeyLk",
+          "name": "billing_errors.md"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "1QGltwaN85TC4VhPxXhk_zVZ_xdrBwESc",
+          "name": "api_documentation_requests.md"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "14JtcbtutQAbmVUPBb4qmAMzpQuwJq9zh",
+          "name": "login_issues.md"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      }
+    ],
+    "KB – Build Unified Knowledge Context": [
+      {
+        "json": {
+          "kb_text": "# Errores de facturación\r\n\r\n## Descripción\r\nProblemas relacionados con generación incorrecta de facturas o cargos duplicados.\r\n\r\n## Indicadores de criticidad\r\n- Cargos duplicados reportados por clientes\r\n- Riesgo de reclamos legales\r\n- Impacto financiero directo\r\n\r\n## Causas frecuentes\r\n- Fallas en procesos batch\r\n- Errores en integraciones de pago\r\n- Reintentos automáticos mal configurados\r\n\r\n## Acciones recomendadas\r\n- Pausar procesos de facturación\r\n- Auditar transacciones recientes\r\n- Corregir registros duplicados\r\n\r\n## Notas\r\nPriorizar revisión legal y comunicación con clientes.\r\n\n\n---\n\n# Consultas sobre documentación de API\r\n\r\n## Descripción\r\nSolicitudes de información o documentación técnica sin impacto operativo.\r\n\r\n## Indicadores de criticidad\r\n- No hay impacto en sistemas productivos\r\n- Consultas informativas o futuras integraciones\r\n\r\n## Causas frecuentes\r\n- Necesidad de planificación técnica\r\n- Evaluación de integraciones futuras\r\n\r\n## Acciones recomendadas\r\n- Enviar documentación actualizada\r\n- Derivar al equipo técnico correspondiente\r\n\r\n## Notas\r\nEste tipo de tickets generalmente no es crítico.\r\n\n\n---\n\n# Problemas de inicio de sesión\r\n\r\n## Descripción\r\nIncidentes donde los usuarios no pueden iniciar sesión en el sistema.\r\n\r\n## Indicadores de criticidad\r\n- Múltiples usuarios afectados\r\n- Imposibilidad total de autenticación\r\n- Impacto directo en operaciones del negocio\r\n\r\n## Causas frecuentes\r\n- Caída del servicio de autenticación\r\n- Tokens expirados\r\n- Error en proveedor de identidad\r\n\r\n## Acciones recomendadas\r\n- Verificar estado del servicio de autenticación\r\n- Revisar logs de login\r\n- Reiniciar servicios afectados\r\n\r\n## Notas\r\nEste tipo de incidente suele ser crítico cuando afecta a todos los usuarios.\r\n"
+        }
+      }
+    ],
+    "Merge – Ticket + Knowledge Base": [
+      {
+        "json": {
+          "ticket_id": "TCK-001",
+          "cliente": "ACME Corp",
+          "mensaje": "Desde hace más de 2 horas el sistema no permite iniciar sesión a ningún usuario. Tenemos operaciones completamente detenidas y necesitamos una solución",
+          "priority": "CRITICO",
+          "kb_text": "# Errores de facturación\r\n\r\n## Descripción\r\nProblemas relacionados con generación incorrecta de facturas o cargos duplicados.\r\n\r\n## Indicadores de criticidad\r\n- Cargos duplicados reportados por clientes\r\n- Riesgo de reclamos legales\r\n- Impacto financiero directo\r\n\r\n## Causas frecuentes\r\n- Fallas en procesos batch\r\n- Errores en integraciones de pago\r\n- Reintentos automáticos mal configurados\r\n\r\n## Acciones recomendadas\r\n- Pausar procesos de facturación\r\n- Auditar transacciones recientes\r\n- Corregir registros duplicados\r\n\r\n## Notas\r\nPriorizar revisión legal y comunicación con clientes.\r\n\n\n---\n\n# Consultas sobre documentación de API\r\n\r\n## Descripción\r\nSolicitudes de información o documentación técnica sin impacto operativo.\r\n\r\n## Indicadores de criticidad\r\n- No hay impacto en sistemas productivos\r\n- Consultas informativas o futuras integraciones\r\n\r\n## Causas frecuentes\r\n- Necesidad de planificación técnica\r\n- Evaluación de integraciones futuras\r\n\r\n## Acciones recomendadas\r\n- Enviar documentación actualizada\r\n- Derivar al equipo técnico correspondiente\r\n\r\n## Notas\r\nEste tipo de tickets generalmente no es crítico.\r\n\n\n---\n\n# Problemas de inicio de sesión\r\n\r\n## Descripción\r\nIncidentes donde los usuarios no pueden iniciar sesión en el sistema.\r\n\r\n## Indicadores de criticidad\r\n- Múltiples usuarios afectados\r\n- Imposibilidad total de autenticación\r\n- Impacto directo en operaciones del negocio\r\n\r\n## Causas frecuentes\r\n- Caída del servicio de autenticación\r\n- Tokens expirados\r\n- Error en proveedor de identidad\r\n\r\n## Acciones recomendadas\r\n- Verificar estado del servicio de autenticación\r\n- Revisar logs de login\r\n- Reiniciar servicios afectados\r\n\r\n## Notas\r\nEste tipo de incidente suele ser crítico cuando afecta a todos los usuarios.\r\n"
+        },
+        "binary": {},
+        "pairedItem": [
+          {
+            "item": 0
+          },
+          {
+            "item": 0,
+            "input": 1
+          }
+        ]
+      },
+      {
+        "json": {
+          "ticket_id": "TCK-003",
+          "cliente": "GlobalTech",
+          "mensaje": "Estamos recibiendo errores intermitentes al generar facturas y varios clientes ya reportaron cargos duplicados. Esto puede generar reclamos legales.",
+          "priority": "CRITICO",
+          "kb_text": "# Errores de facturación\r\n\r\n## Descripción\r\nProblemas relacionados con generación incorrecta de facturas o cargos duplicados.\r\n\r\n## Indicadores de criticidad\r\n- Cargos duplicados reportados por clientes\r\n- Riesgo de reclamos legales\r\n- Impacto financiero directo\r\n\r\n## Causas frecuentes\r\n- Fallas en procesos batch\r\n- Errores en integraciones de pago\r\n- Reintentos automáticos mal configurados\r\n\r\n## Acciones recomendadas\r\n- Pausar procesos de facturación\r\n- Auditar transacciones recientes\r\n- Corregir registros duplicados\r\n\r\n## Notas\r\nPriorizar revisión legal y comunicación con clientes.\r\n\n\n---\n\n# Consultas sobre documentación de API\r\n\r\n## Descripción\r\nSolicitudes de información o documentación técnica sin impacto operativo.\r\n\r\n## Indicadores de criticidad\r\n- No hay impacto en sistemas productivos\r\n- Consultas informativas o futuras integraciones\r\n\r\n## Causas frecuentes\r\n- Necesidad de planificación técnica\r\n- Evaluación de integraciones futuras\r\n\r\n## Acciones recomendadas\r\n- Enviar documentación actualizada\r\n- Derivar al equipo técnico correspondiente\r\n\r\n## Notas\r\nEste tipo de tickets generalmente no es crítico.\r\n\n\n---\n\n# Problemas de inicio de sesión\r\n\r\n## Descripción\r\nIncidentes donde los usuarios no pueden iniciar sesión en el sistema.\r\n\r\n## Indicadores de criticidad\r\n- Múltiples usuarios afectados\r\n- Imposibilidad total de autenticación\r\n- Impacto directo en operaciones del negocio\r\n\r\n## Causas frecuentes\r\n- Caída del servicio de autenticación\r\n- Tokens expirados\r\n- Error en proveedor de identidad\r\n\r\n## Acciones recomendadas\r\n- Verificar estado del servicio de autenticación\r\n- Revisar logs de login\r\n- Reiniciar servicios afectados\r\n\r\n## Notas\r\nEste tipo de incidente suele ser crítico cuando afecta a todos los usuarios.\r\n"
+        },
+        "binary": {},
+        "pairedItem": [
+          {
+            "item": 1
+          },
+          {
+            "item": 0,
+            "input": 1
+          }
+        ]
+      }
+    ],
+    "LLM – Generate Critical Ticket Analysis": [
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\"ticket_id\": \"TCK-001\", \"cliente\": \"ACME Corp\", \"summary\": \"Imposibilidad de inicio de sesión para todos los usuarios, afectando directamente las operaciones del negocio.\", \"reasons\": [\"Caída del servicio de autenticación\", \"Tokens expirados\", \"Error en proveedor de identidad\"], \"suggested_actions\": [\"Verificar estado del servicio de autenticación\", \"Revisar logs de login\", \"Reiniciar servicios afectados\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\"ticket_id\": \"TCK-003\", \"cliente\": \"GlobalTech\", \"summary\": \"Errores intermitentes al generar facturas y cargos duplicados reportados por clientes, con riesgo de reclamos legales.\", \"reasons\": [\"Fallas en procesos batch\", \"Errores en integraciones de pago\", \"Reintentos automáticos mal configurados\"], \"suggested_actions\": [\"Pausar procesos de facturación\", \"Auditar transacciones recientes\", \"Corregir registros duplicados\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ],
+    "Parser – Normalize LLM Resolution Output": [
+      {
+        "json": {
+          "ticket_id": "TCK-001",
+          "cliente": "ACME Corp",
+          "summary": "Imposibilidad de inicio de sesión para todos los usuarios, afectando directamente las operaciones del negocio.",
+          "reasons": [
+            "Caída del servicio de autenticación",
+            "Tokens expirados",
+            "Error en proveedor de identidad"
+          ],
+          "suggested_actions": [
+            "Verificar estado del servicio de autenticación",
+            "Revisar logs de login",
+            "Reiniciar servicios afectados"
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "ticket_id": "TCK-003",
+          "cliente": "GlobalTech",
+          "summary": "Errores intermitentes al generar facturas y cargos duplicados reportados por clientes, con riesgo de reclamos legales.",
+          "reasons": [
+            "Fallas en procesos batch",
+            "Errores en integraciones de pago",
+            "Reintentos automáticos mal configurados"
+          ],
+          "suggested_actions": [
+            "Pausar procesos de facturación",
+            "Auditar transacciones recientes",
+            "Corregir registros duplicados"
+          ]
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Trigger – New Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "LLM – Classify Ticket Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM – Classify Ticket Priority": {
+      "main": [
+        [
+          {
+            "node": "Parser – Normalize LLM Classification Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser – Normalize LLM Classification Output": {
+      "main": [
+        [
+          {
+            "node": "Router – Critical vs Non-Critical",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router – Critical vs Non-Critical": {
+      "main": [
+        [
+          {
+            "node": "Merge – Ticket + Knowledge Base",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "KB – Search Knowledge Base Files",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router – Non-Critical vs Unknown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB – Search Knowledge Base Files": {
+      "main": [
+        [
+          {
+            "node": "Filter – Remove Duplicate KB Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter – Remove Duplicate KB Files": {
+      "main": [
+        [
+          {
+            "node": "KB – Download Knowledge File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB – Download Knowledge File": {
+      "main": [
+        [
+          {
+            "node": "KB – Extract Text Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB – Extract Text Content": {
+      "main": [
+        [
+          {
+            "node": "KB – Build Unified Knowledge Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB – Build Unified Knowledge Context": {
+      "main": [
+        [
+          {
+            "node": "Merge – Ticket + Knowledge Base",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge – Ticket + Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "LLM – Generate Critical Ticket Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM – Generate Critical Ticket Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parser – Normalize LLM Resolution Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser – Normalize LLM Resolution Output": {
+      "main": [
+        [
+          {
+            "node": "Notify – Send Critical Ticket Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router – Non-Critical vs Unknown": {
+      "main": [
+        [
+          {
+            "node": "Backlog – Register Non-Critical Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Audit Log – Register LLM Exception",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "0e613fdd-cbde-488c-a6fb-c76e0d5c1262",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30877a0314d84e0a9dc23aadf403ae393c06ecb127f2edc09c97ef3cb817d5e1"
+  },
+  "id": "bDIO0JehoDiNhca0g6l1R",
+  "tags": [
+    {
+      "updatedAt": "2026-01-15T04:20:23.515Z",
+      "createdAt": "2026-01-15T04:20:23.515Z",
+      "id": "SYa5RBupznMHGOM5",
+      "name": "CODERHOUSE"
+    }
+  ]
+}

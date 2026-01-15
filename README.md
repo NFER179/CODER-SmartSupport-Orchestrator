@@ -13,11 +13,11 @@ Además, mantiene trazabilidad completa mediante logs y backlogs estructurados.
 
 > 📍 Diagrama visual del flujo completo  
 
-![Support Ticket Automation Diagram](./imgs/Trabajo Final - Support Ticket Automation with AI.png)
+![Support Ticket Automation Diagram](imgs/Trabajo%20Final%20-%20Support%20Ticket%20Automation%20with%20AI.png)
 
 ## 🖼️ Diagrama control errores en workflows
 
-![Support Ticket Automation Diagram](./imgs/Worflow Error Trigger.png)
+![Support Ticket Automation Diagram](imgs/Worflow%20Error%20Trigger.png)
 
 ---
 

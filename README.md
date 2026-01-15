@@ -134,6 +134,21 @@ Los tickets críticos:
 
     Markdown Knowledge Base
 
+## 📂 Datos de prueba
+
+Para facilitar la revisión y validación del proyecto, se disponibilizan **datos de prueba** (tickets simulados, archivos de base de conocimiento y ejemplos de ejecución) en un **Google Drive público**.
+
+Estos datos permiten:
+- Probar el workflow sin necesidad de crear información desde cero.
+- Replicar los escenarios de tickets críticos, no críticos y errores.
+- Verificar el correcto funcionamiento de la clasificación automática y el manejo de excepciones.
+
+🔗 **Acceso a los datos de prueba:**  
+👉 [Enlace público a Google Drive](https://drive.google.com/drive/folders/1RVOBtfOe3HfBSkIn0iUQN8bhmMDnKoRA?usp=sharing)
+
+> ℹ️ Los datos son ficticios y fueron creados exclusivamente con fines académicos y demostrativos.
+
+
 📎 Autor
 
 Fernández Nicolás
